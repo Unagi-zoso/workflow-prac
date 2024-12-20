@@ -22,10 +22,13 @@ jobs:
 
       - name: Build and push Docker image
         run: |
+          # Repo 이름은 소문자로만 구성
+          LOWERCASE_ACTOR=$(echo "${{ github.actor }}" | tr '[:upper:]' '[:lower:]')
+
           docker buildx build \
             --platform linux/amd64 \
             --push \
-            -t ghcr.io/${{ github.repository_owner }}/my-express-app:latest .
+            -t ghcr.io/$LOWERCASE_ACTOR/my-express-app:latest .
 
   deploy:
     needs: [build-and-push]
@@ -34,13 +37,15 @@ jobs:
       - name: Prepare SSH Key
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > key.pem
-          chmod 600 key.pem
+          chmod 400 key.pem
 
       - name: SSH into EC2 and pull/run container
         run: |
           # 환경변수 준비 (secrets에 해당 값들을 넣어두어야 값이 똑바로 읽어와진다!)
           HOST=${{ secrets.HOST }}
           USER=${{ secrets.USER }}
+          # Repo 이름은 소문자로만 구성
+          LOWERCASE_ACTOR=$(echo "${{ github.actor }}" | tr '[:upper:]' '[:lower:]')
 
           # EC2 서버 접속 후 Docker 명령 실행
           # 현재 실행 중인 동일한 컨테이너가 있다면 삭제한다.
@@ -48,7 +53,7 @@ jobs:
 
           # GHCR로부터 최신 이미지 pull
           ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_PAT }}"
-          ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "docker pull ghcr.io/${{ github.repository_owner }}/my-express-app:latest"
+          ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "docker pull ghcr.io/${{ LOWERCASE_ACTOR }}/my-express-app:latest"
 
           # 새로운 컨테이너 실행 (포트 매핑)
-          ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "docker run -d --name my-express-app -p 3000:3000 ghcr.io/${{ github.repository_owner }}/my-express-app:latest"
+          ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "docker run -d --name my-express-app -p 3010:3000 ghcr.io/${{ github.repository_owner }}/my-express-app:latest"
