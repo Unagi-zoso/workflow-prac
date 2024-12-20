@@ -65,4 +65,4 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "docker pull ghcr.io/${{ env.ACTOR_LC }}/my-express-app:latest"
 
           # 새로운 컨테이너 실행 (포트 매핑)
-          ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "docker run -d --name my-express-app -p 3010:3000 ghcr.io/${{ github.repository_owner }}/my-express-app:latest"
+          ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "docker run -d --name my-express-app -p 3010:3000 ghcr.io/${{ env.ACTOR_LC }}/my-express-app:latest"
